@@ -1,0 +1,72 @@
+import os
+import subprocess
+import shutil
+from collections import defaultdict
+
+# İndirme komutları
+# 1. Firefox oturumlarını içe aktar
+# 2. Instaloader ile belirli Instagram profillerinden hikayeleri indir
+commands = [
+    'python "C:\\Users\\{{user}}\\Downloads\\615_import_firefox_session.py" -c "C:\\Users\\{{user}}\\AppData\\Local\\Packages\\Mozilla.Firefox_n80bbvh6b1yt2\\LocalCache\\Roaming\\Mozilla\\Firefox\\Profiles\\r7kmwltq.default-release\\cookies.sqlite"',
+    'for %i in (google teslamotors) do instaloader --login=instagramkullanıcıadınızıburayagiriniz --stories --profile %i'
+]
+
+# Komutları sırayla çalıştır
+for cmd in commands:
+    subprocess.run(cmd, shell=True)
+
+# İndirme ve masaüstü yolu tanımları
+downloads_path = "dosya yolunu burda belirtin"
+desktop_path = "taşımak istediğiniz bir yer varsa burda belirtin"
+
+for profile in ['google', 'teslamotors']:
+    src_path = os.path.join(downloads_path, profile)
+    dest_path = os.path.join(desktop_path, profile)
+    
+    if not os.path.exists(dest_path):
+        os.makedirs(dest_path)
+    
+    for filename in os.listdir(src_path):
+        src_file_path = os.path.join(src_path, filename)
+        dest_file_path = os.path.join(dest_path, filename)
+        
+        if os.path.isdir(src_file_path):
+            if os.path.exists(dest_file_path):
+                # Hedef dosya varsa, dosya içindekileri taşı
+                for asset in os.listdir(src_file_path):
+                    asset_src_path = os.path.join(src_file_path, asset)
+                    asset_dest_path = os.path.join(dest_file_path, asset)
+                    shutil.move(asset_src_path, asset_dest_path)
+            else:
+                shutil.move(src_file_path, dest_file_path)
+        else:
+            shutil.move(src_file_path, dest_file_path)
+
+# İçerisinde .xz, .txt, "profile_pic.jpg" veya "id" içeren dosyaların silinmesi
+for root, dirs, files in os.walk(desktop_path):
+    for file_name in files:
+        if file_name.endswith((".xz", "profile_pic.jpg", ".txt")) or "id" in file_name:
+            file_path = os.path.join(root, file_name)
+            os.remove(file_path)
+
+# Duplicate dosyaların kaldırılması
+for root, dirs, files in os.walk(desktop_path):
+    files_dict = defaultdict(list)
+    for file_name in files:
+        base_name, extension = os.path.splitext(file_name)
+        files_dict[base_name].append((file_name, extension))
+    
+    # Duplicate dosyaların kaldırılması
+    for base_name, extensions in files_dict.items():
+        jpg_files = [f for f, ext in extensions if ext == '.jpg']
+        mp4_files = [f for f, ext in extensions if ext == '.mp4']
+
+        if len(jpg_files) > 1:
+            # Birden fazla .jpg dosyası varsa, sadece bir tanesini sakla
+            for jpg_file in jpg_files[1:]:
+                os.remove(os.path.join(root, jpg_file))
+        
+        if len(jpg_files) > 0 and len(mp4_files) > 0:
+            # Hem .jpg hem de .mp4 dosyaları varsa, .jpg dosyalarını sil
+            for jpg_file in jpg_files:
+                os.remove(os.path.join(root, jpg_file))
