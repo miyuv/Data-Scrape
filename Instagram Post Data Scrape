@@ -1,0 +1,37 @@
+import instaloader
+from datetime import datetime, timedelta
+import pandas as pd
+import os
+
+# Instaloader nesnesi oluştur
+L = instaloader.Instaloader()
+
+# Hedef hesap adı
+target_account = 'google'
+
+# Hedef hesabın profili
+profile = instaloader.Profile.from_username(L.context, target_account)
+
+# DataFrame oluşturmak için kullanılacak liste
+data = []
+
+# Tarih filtresi için bir hafta önceki tarih
+start_date = datetime(2022, 6, 1)
+end_date = datetime.now()  # Şu anki tarih
+
+# Hedef hesabın gönderilerini al ve tarih filtresini uygula
+for post in profile.get_posts():
+    if post.date > start_date:
+        post_data = {
+            'Post Links': f"https://www.instagram.com/p/{post.shortcode}/",
+            'Post View': post.url,
+            'Caption': post.caption,
+            'Likes': post.likes,
+            'Comments': post.comments,
+            'Date': post.date,
+        }
+        data.append(post_data)
+
+# DataFrame oluştur
+df = pd.DataFrame(data)
+
